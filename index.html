@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PokéCalc — Arène de calcul de dégâts</title>
-<meta name="theme-color" content="#0e0f12">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e0f12">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f4f7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -154,6 +155,81 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   .dmg{font-size:clamp(30px,5vw,42px)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  .dock{padding-top:10px}
+  .hpwrap{margin:9px 0 2px}
+  .verdict-line{margin-top:9px}
+  .cond-note{margin-top:8px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);line-height:1.4}
+  /* barre repliable du dock */
+  .dock-bar{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:0 0 8px;cursor:pointer;color:var(--muted);font-family:inherit;-webkit-tap-highlight-color:transparent}
+  .dock-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
+  .dock-mini{flex:1;text-align:right;font-family:"JetBrains Mono",monospace;font-size:12.5px;font-weight:600;color:var(--text);display:none}
+  .chev{flex:none;color:var(--muted);transition:transform .2s}
+  .dock.collapsed .dock-mini{display:block}
+  .dock.collapsed #readout{display:none}
+  .dock.collapsed .dock-bar{padding-bottom:0}
+  .dock.collapsed .chev{transform:rotate(180deg)}
+
+  /* fonds des jauges via token (s'adapte au thème) */
+  :root{--track:#0a0b0e}
+  .bg{background:var(--bg)}
+  .hpbar{background:var(--track)}
+  .dexbar{background:var(--track)}
+
+  /* ===== Mode clair (suit le réglage de l'appareil) ===== */
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f3f4f7; --surface:#ffffff; --surface-2:#eef0f4; --surface-3:#e3e6ec;
+      --line:#e4e6ed; --line-2:#ccd2dc; --text:#161922; --muted:#5b6472; --dim:#98a0ac; --track:#e6e8ee;
+      --accent:#d23b42; --atk:#1f7fe0; --def:#dd6526; --gold:#a9760a; --lcd:#13966a; --cyan:#1f7fe0;
+      --hp-hi:#1faa64; --hp-mid:#b5790b; --hp-lo:#d6383f;
+    }
+  }
+  /* zones de paramétrage repliables */
+  .sect{border:1px solid var(--line);border-radius:11px;margin-bottom:11px;background:var(--surface-2);overflow:hidden}
+  .sect>summary{list-style:none;cursor:pointer;padding:11px 13px;display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);-webkit-tap-highlight-color:transparent;user-select:none}
+  .sect>summary::-webkit-details-marker{display:none}
+  .sect>summary::after{content:"›";margin-left:auto;font-size:18px;line-height:1;transition:transform .2s}
+  .sect[open]>summary{color:var(--text);border-bottom:1px solid var(--line)}
+  .sect[open]>summary::after{transform:rotate(90deg)}
+  .sect-body{padding:13px}
+  .sect-body .field:last-child{margin-bottom:0}
+  .sect-body .evtotal{margin-bottom:0}
+  /* ===== Ergonomie mobile « app » ===== */
+  *{-webkit-tap-highlight-color:transparent}
+  html{touch-action:manipulation}
+  body{user-select:none;-webkit-user-select:none}
+  input,textarea,select{user-select:text;-webkit-user-select:text}
+  button,.tab,summary,label,.pickbtn,.dock-bar,.pick-opt,.rtoggle{touch-action:manipulation}
+
+  /* cibles tactiles confortables */
+  input:not([type=checkbox]),select{min-height:44px}
+  .ev input,.ev select{min-height:40px}
+  .topbar select#gen{min-height:40px}
+  .tab{display:flex;align-items:center;justify-content:center;min-height:46px;padding:11px 4px}
+  .pickbtn{min-height:44px}
+  .sect>summary{min-height:48px;padding:14px 13px}
+  .picker-head input,.picker-head button{min-height:46px}
+  .pick-opt{min-height:48px;display:flex;align-items:center}
+
+  /* retours tactiles (état pressé) */
+  .tab:active{opacity:.65}
+  .pickbtn:active{background:var(--surface-2);transform:scale(.95)}
+  .sect>summary:active{background:var(--surface-3)}
+  .dock-bar:active{opacity:.6}
+  .pick-opt:active{background:var(--surface-2)}
+  .picker-head button:active{opacity:.6}
+  .rtoggle:active{opacity:.6}
+
+  /* feuille de sélection : poignée + marge sûre */
+  .picker-card{padding-top:6px}
+  .picker-card::before{content:"";display:block;width:38px;height:4px;border-radius:3px;background:var(--line-2);margin:6px auto 4px}
+  .picker-list{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+
+  /* barres de défilement discrètes */
+  .scroll,.picker-list{scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+  .scroll::-webkit-scrollbar,.picker-list::-webkit-scrollbar{width:7px}
+  .scroll::-webkit-scrollbar-thumb,.picker-list::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+  .scroll::-webkit-scrollbar-track,.picker-list::-webkit-scrollbar-track{background:transparent}
 </style>
 </head>
 <body>
@@ -277,19 +353,27 @@ function monBlock(side){
       <div class="field"><span>Nature</span><select class="nature" id="${side}-nature"></select></div>
       <div class="field"><span>Niveau</span><input type="number" id="${side}-level" value="50" min="1" max="100" inputmode="numeric"></div>
     </div>
-    <div class="field"><span>Points de Stat (SP)</span><div class="evgrid">${evCells}</div><div class="evtotal" id="${side}-evtotal">0 / 66</div></div>
-    <div class="row">
-      <div class="field"><span>Objet tenu</span><div class="pick"><input list="dl-items" id="${side}-item" placeholder="ex. Lunettes Choix" autocomplete="off">${LBTN(side+'-item','dl-items')}</div></div>
-      <div class="field"><span>Talent</span><div class="pick"><input list="dl-abilities" id="${side}-ability" placeholder="auto" autocomplete="off">${LBTN(side+'-ability','dl-abilities')}</div></div>
-    </div>
-    <div class="row">
-      <div class="field"><span>Statut</span><select id="${side}-status">
-        <option value="">Aucun</option><option value="brn">Brûlure</option><option value="par">Paralysie</option>
-        <option value="psn">Poison</option><option value="tox">Poison grave</option><option value="slp">Sommeil</option><option value="frz">Gel</option>
-      </select></div>
-      <div class="field tera-field"><span>Téracristal</span><select class="tera" id="${side}-tera"></select></div>
-    </div>
-    <div class="field"><span>Boosts / Drops de stats</span><div class="evgrid">${boostRow}</div></div>
+    <details class="sect" open><summary>Points de Stat</summary><div class="sect-body">
+      <div class="evgrid">${evCells}</div><div class="evtotal" id="${side}-evtotal">0 / 66</div>
+    </div></details>
+    <details class="sect" open><summary>Objet &amp; talent</summary><div class="sect-body">
+      <div class="row">
+        <div class="field"><span>Objet tenu</span><div class="pick"><input list="dl-items" id="${side}-item" placeholder="ex. Lunettes Choix" autocomplete="off">${LBTN(side+'-item','dl-items')}</div></div>
+        <div class="field"><span>Talent</span><div class="pick"><input list="dl-abilities" id="${side}-ability" placeholder="auto" autocomplete="off">${LBTN(side+'-ability','dl-abilities')}</div></div>
+      </div>
+    </div></details>
+    <details class="sect"><summary>Statut &amp; Téra</summary><div class="sect-body">
+      <div class="row">
+        <div class="field"><span>Statut</span><select id="${side}-status">
+          <option value="">Aucun</option><option value="brn">Brûlure</option><option value="par">Paralysie</option>
+          <option value="psn">Poison</option><option value="tox">Poison grave</option><option value="slp">Sommeil</option><option value="frz">Gel</option>
+        </select></div>
+        <div class="field tera-field"><span>Téracristal</span><select class="tera" id="${side}-tera"></select></div>
+      </div>
+    </div></details>
+    <details class="sect"><summary>Boosts / Drops de stats</summary><div class="sect-body">
+      <div class="evgrid">${boostRow}</div>
+    </div></details>
     <div class="stats" id="${side}-stats">—</div>
   </section>`;
 }
@@ -386,11 +470,20 @@ function render(){
         <div id="dex-out" class="dexcard"><div class="hint">Cherche un Pokémon pour voir ses stats de base.</div></div>
       </section>
     </div>
-    <div class="dock">
+    <div class="dock" id="dock">
+      <button type="button" id="dockToggle" class="dock-bar" aria-expanded="true" aria-label="Afficher ou masquer le résultat">
+        <span class="dock-label">Résultat</span>
+        <span id="dock-mini" class="dock-mini"></span>
+        <svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <div id="readout"><div class="hint">Choisis un attaquant, un défenseur et une attaque pour lancer le combat.</div></div>
     </div>
   `;
-  setupTabs(); setupDex();
+  setupTabs(); setupDex(); setupDock();
+}
+function setupDock(){
+  const t=$('dockToggle'); if(!t) return;
+  t.addEventListener('click',()=>{ const d=$('dock'); const c=d.classList.toggle('collapsed'); t.setAttribute('aria-expanded', String(!c)); });
 }
 function setupTabs(){
   const tabs=[...document.querySelectorAll('.tab')], panels=[...document.querySelectorAll('.panel')];
@@ -438,6 +531,7 @@ function compute(){
   const atk=buildPokemon('atk'), def=buildPokemon('def');
   updateEVmeta('atk',atk); updateEVmeta('def',def);
   const out=$('readout'); const rawMove=$('move').value.trim(); const moveName=toEN('moves',rawMove);
+  const dm=$('dock-mini'); if(dm) dm.textContent='';
 
   if(atk===null||def===null||!rawMove){ out.innerHTML=`<div class="hint">Choisis un attaquant, un défenseur et une attaque pour lancer le combat.</div>`; return; }
   if(!atk||!def){ out.innerHTML=`<div class="hint">Vérifie les noms — l'un des Pokémon n'existe pas dans la Gen ${genNum}.</div>`; return; }
@@ -454,7 +548,7 @@ function compute(){
   }catch(e){ out.innerHTML=`<div class="hint">Combinaison non calculable : ${e.message}</div>`; return; }
 
   const [mn,mx]=res.range(); const H=def.maxHP();
-  if(mx<=0){ out.innerHTML=`<div class="figure"><div class="dmg">0 <small>PV</small></div></div><div class="verdict-line safe">Sans effet — immunité ou attaque inefficace</div>`; return; }
+  if(mx<=0){ if(dm) dm.textContent='0 %'; out.innerHTML=`<div class="figure"><div class="dmg">0 <small>PV</small></div></div><div class="verdict-line safe">Sans effet — immunité ou attaque inefficace</div>`; return; }
 
   const pctMin=(mn/H*100), pctMax=(mx/H*100); const fmt=(n)=>Number(n.toFixed(1));
   const safeRem=Math.max(0,(H-mx)/H)*100;
@@ -479,13 +573,13 @@ function compute(){
   if($('gametype').value==='Doubles') extra.push('combat double');
   const desc = `${atkFr} · <b>${mvFr}</b> → ${defFr}${extra.length?` · ${extra.join(' · ')}`:''}`;
 
+  if(dm) dm.textContent=`${fmt(pctMin)} – ${fmt(pctMax)} %`;
   out.innerHTML=`
     <div class="figure">
       <div class="dmg">${mn} – ${mx} <small>PV</small></div>
-      <div class="pct">${fmt(pctMin)} – ${fmt(pctMax)} % des PV</div>
+      <div class="pct">${fmt(pctMin)} – ${fmt(pctMax)} %</div>
     </div>
     <div class="hpwrap">
-      <div class="hplabels"><span>PV du défenseur : ${H}</span><span>il en garde ${Math.max(0,H-mx)} → ${H-mn}</span></div>
       <div class="hpbar">
         <div class="hp-safe" style="width:${safeRem}%;background:${safeColor};color:${safeColor}"></div>
         <div class="hp-risk" style="left:${safeRem}%;width:${riskW}%"></div>
@@ -493,7 +587,7 @@ function compute(){
       </div>
     </div>
     <div class="verdict-line ${cls}">${stamp}<span>${koFr||'—'}</span></div>
-    <div class="desc">${desc}</div>
+    ${extra.length?`<div class="cond-note">${extra.join(' · ')}</div>`:''}
   `;
 }
 
