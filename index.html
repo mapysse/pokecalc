@@ -230,6 +230,22 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   .scroll::-webkit-scrollbar,.picker-list::-webkit-scrollbar{width:7px}
   .scroll::-webkit-scrollbar-thumb,.picker-list::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
   .scroll::-webkit-scrollbar-track,.picker-list::-webkit-scrollbar-track{background:transparent}
+  /* ===== Compacité verticale (tout fermé tient sans scroll) ===== */
+  .topbar{padding-top:calc(env(safe-area-inset-top,0px) + 9px);padding-bottom:6px}
+  .topsub{padding-bottom:7px}
+  .tabs{padding-bottom:7px}
+  .mon{padding:12px 13px}
+  .role{margin:1px 0 10px}
+  .field{margin-bottom:9px}
+  .field>span{margin-bottom:4px}
+  input:not([type=checkbox]),select{min-height:40px}
+  .ev input,.ev select{min-height:38px}
+  .sect{margin-bottom:8px}
+  .sect>summary{min-height:42px;padding:11px 13px}
+  .stats{margin-top:9px;padding-top:9px}
+  .movebar{margin-top:9px;padding:12px}
+  .critwrap{padding-bottom:7px}
+  .dock-bar{padding-bottom:6px}
 </style>
 </head>
 <body>
@@ -279,6 +295,7 @@ const BOOSTABLE = ["atk","def","spa","spd","spe"];
 
 // Roster Pokémon Champions (espèces de base + formes régionales). Source : Serebii / Bulbapedia.
 const ROSTER = new Set(["Venusaur","Charizard","Blastoise","Beedrill","Pidgeot","Arbok","Pikachu","Raichu","Clefable","Ninetales","Vileplume","Arcanine","Alakazam","Machamp","Victreebel","Slowbro","Gengar","Kangaskhan","Starmie","Pinsir","Tauros","Gyarados","Ditto","Vaporeon","Jolteon","Flareon","Aerodactyl","Snorlax","Dragonite","Meganium","Typhlosion","Feraligatr","Ariados","Ampharos","Azumarill","Politoed","Espeon","Umbreon","Slowking","Forretress","Steelix","Qwilfish","Scizor","Heracross","Skarmory","Houndoom","Tyranitar","Sceptile","Blaziken","Swampert","Pelipper","Gardevoir","Sableye","Mawile","Aggron","Medicham","Manectric","Sharpedo","Camerupt","Torkoal","Altaria","Milotic","Castform","Banette","Chimecho","Absol","Glalie","Metagross","Torterra","Infernape","Empoleon","Staraptor","Luxray","Roserade","Rampardos","Bastiodon","Lopunny","Spiritomb","Garchomp","Lucario","Hippowdon","Toxicroak","Abomasnow","Weavile","Rhyperior","Leafeon","Glaceon","Gliscor","Mamoswine","Gallade","Froslass","Rotom","Serperior","Emboar","Samurott","Watchog","Liepard","Simisage","Simisear","Simipour","Musharna","Excadrill","Audino","Conkeldurr","Scolipede","Whimsicott","Krookodile","Scrafty","Cofagrigus","Garbodor","Zoroark","Reuniclus","Vanilluxe","Emolga","Eelektross","Chandelure","Beartic","Stunfisk","Golurk","Hydreigon","Volcarona","Chesnaught","Delphox","Greninja","Diggersby","Talonflame","Vivillon","Pyroar","Floette","Florges","Pangoro","Furfrou","Meowstic","Aegislash-Shield","Aromatisse","Slurpuff","Malamar","Barbaracle","Dragalge","Clawitzer","Heliolisk","Tyrantrum","Aurorus","Sylveon","Hawlucha","Dedenne","Goodra","Klefki","Trevenant","Gourgeist","Avalugg","Noivern","Decidueye","Incineroar","Primarina","Toucannon","Crabominable","Lycanroc","Toxapex","Mudsdale","Araquanid","Salazzle","Tsareena","Oranguru","Passimian","Mimikyu","Drampa","Kommo-o","Corviknight","Flapple","Appletun","Sandaconda","Polteageist","Hatterene","Grimmsnarl","Mr. Rime","Runerigus","Alcremie","Falinks","Morpeko","Dragapult","Wyrdeer","Kleavor","Basculegion","Sneasler","Overqwil","Meowscarada","Skeledirge","Quaquaval","Maushold","Garganacl","Armarouge","Ceruledge","Bellibolt","Scovillain","Espathra","Tinkaton","Palafin","Orthworm","Glimmora","Houndstone","Annihilape","Farigiraf","Kingambit","Gholdengo","Sinistcha","Archaludon","Hydrapple","Raichu-Alola","Ninetales-Alola","Arcanine-Hisui","Slowbro-Galar","Slowking-Galar","Tauros-Paldea-Combat","Tauros-Paldea-Blaze","Tauros-Paldea-Aqua","Typhlosion-Hisui","Samurott-Hisui","Zoroark-Hisui","Stunfisk-Galar","Goodra-Hisui","Avalugg-Hisui","Decidueye-Hisui","Rotom-Heat","Rotom-Wash","Rotom-Frost","Rotom-Fan","Rotom-Mow"]);
+const ROSTER_ITEMS = new Set(["Life Orb","Expert Belt","Muscle Band","Wise Glasses","Metronome","Throat Spray","Booster Energy","Focus Sash","Focus Band","Weakness Policy","White Herb","Mental Herb","Power Herb","Mirror Herb","Rocky Helmet","Leftovers","Air Balloon","Light Clay","Quick Claw","Scope Lens","Wide Lens","Zoom Lens","Bright Powder","Safety Goggles","Protective Pads","Loaded Dice","Shell Bell","Heat Rock","Damp Rock","Smooth Rock","Icy Rock","Clear Amulet","Covert Cloak","King's Rock","Lax Incense","Eject Button","Eject Pack","Red Card","Room Service","Black Sludge","Blunder Policy","Punching Glove","Toxic Orb","Flame Orb","Grip Claw","Binding Band","Iron Ball","Float Stone","Lagging Tail","Razor Claw","Razor Fang","Adrenaline Orb","Absorb Bulb","Cell Battery","Snowball","Luminous Moss","Charcoal","Mystic Water","Magnet","Miracle Seed","Never-Melt Ice","Black Belt","Poison Barb","Soft Sand","Sharp Beak","Twisted Spoon","Silver Powder","Hard Stone","Spell Tag","Dragon Fang","Black Glasses","Metal Coat","Silk Scarf","Fairy Feather","Occa Berry","Passho Berry","Wacan Berry","Rindo Berry","Yache Berry","Chople Berry","Kebia Berry","Shuca Berry","Coba Berry","Payapa Berry","Tanga Berry","Charti Berry","Kasib Berry","Haban Berry","Colbur Berry","Roseli Berry","Babiri Berry","Chilan Berry","Sitrus Berry","Lum Berry","Oran Berry","Cheri Berry","Chesto Berry","Pecha Berry","Rawst Berry","Aspear Berry","Persim Berry","Figy Berry","Wiki Berry","Mago Berry","Aguav Berry","Iapapa Berry","Liechi Berry","Petaya Berry","Salac Berry","Apicot Berry","Ganlon Berry","Starf Berry","Lansat Berry","Custap Berry","Micle Berry","Jaboca Berry","Rowap Berry","Maranga Berry","Kee Berry","Enigma Berry"]);
 function inRoster(name){
   if(ROSTER.has(name)) return true;
   const b=name.replace(/-Mega(-[XY])?$/,'').replace(/-Primal$/,'');
@@ -307,6 +324,17 @@ function fillDatalist(el, names){ el.innerHTML = names.map(n=>`<option value="${
 function collect(iter){ const a=[]; for(const x of iter) a.push(x.name); a.sort((p,q)=>p.localeCompare(q)); return a; }
 
 function frSort(arr){ return arr.slice().sort((a,b)=>a.localeCompare(b,'fr')); }
+function inRosterItem(en){
+  if(ROSTER_ITEMS.has(en)) return true;
+  const it = gen && gen.items.get(dexId(en));
+  return !!(it && it.megaStone);
+}
+function fillItems(){
+  if(!gen) return;
+  let names=collect(gen.items);
+  if(rosterOn()) names=names.filter(inRosterItem);
+  fillDatalist($('dl-items'), frSort(names.map(x=>frName('items',x))));
+}
 function fillSpecies(){
   if(!gen) return;
   let names=collect(gen.species);
@@ -319,7 +347,7 @@ function buildGen(n){
   genNum = n; gen = calc.Generations.get(n);
   fillSpecies();
   fillDatalist($('dl-moves'), frSort(collect(gen.moves).map(x=>frName('moves',x))));
-  fillDatalist($('dl-items'), frSort(collect(gen.items).map(x=>frName('items',x))));
+  fillItems();
   fillDatalist($('dl-abilities'), frSort(collect(gen.abilities).map(x=>frName('abilities',x))));
   const STATLBL={atk:'Atq',def:'Déf',spa:'A.Spé',spd:'D.Spé',spe:'Vit'};
   const natOpts = [...gen.natures]
@@ -353,10 +381,10 @@ function monBlock(side){
       <div class="field"><span>Nature</span><select class="nature" id="${side}-nature"></select></div>
       <div class="field"><span>Niveau</span><input type="number" id="${side}-level" value="50" min="1" max="100" inputmode="numeric"></div>
     </div>
-    <details class="sect" open><summary>Points de Stat</summary><div class="sect-body">
+    <details class="sect"><summary>Points de Stat</summary><div class="sect-body">
       <div class="evgrid">${evCells}</div><div class="evtotal" id="${side}-evtotal">0 / 66</div>
     </div></details>
-    <details class="sect" open><summary>Objet &amp; talent</summary><div class="sect-body">
+    <details class="sect"><summary>Objet &amp; talent</summary><div class="sect-body">
       <div class="row">
         <div class="field"><span>Objet tenu</span><div class="pick"><input list="dl-items" id="${side}-item" placeholder="ex. Lunettes Choix" autocomplete="off">${LBTN(side+'-item','dl-items')}</div></div>
         <div class="field"><span>Talent</span><div class="pick"><input list="dl-abilities" id="${side}-ability" placeholder="auto" autocomplete="off">${LBTN(side+'-ability','dl-abilities')}</div></div>
@@ -463,15 +491,15 @@ function render(){
           <label><input type="checkbox" id="lightscreen"> Mur Lumière</label>
           <label><input type="checkbox" id="auroraveil"> Voile Aurore</label>
         </div>
-        <p class="hint footnote">Façon <b>Champions</b> : IV fixées à 31, niveau 50, liste limitée au roster (décoche « Roster » en haut pour tout voir). <b>Points de Stat</b> : 0 à 32 par stat, 66 au total (1 SP = +1 stat au niveau 50). <b>Méga-évolutions</b> calculables en Gen 9 : tape p.ex. <code>Gardevoir-Mega</code>. Les mégas inédites de Champions (Méga-Méganium…) ne sont pas encore dans le moteur. Talent auto si laissé vide.</p>
+        <p class="hint footnote">Façon <b>Champions</b> : IV fixées à 31, niveau 50, liste limitée au roster — Pokémon <b>et objets</b> (décoche « Roster » en haut pour tout voir). <b>Points de Stat</b> : 0 à 32 par stat, 66 au total (1 SP = +1 stat au niveau 50). <b>Méga-évolutions</b> calculables en Gen 9 : tape p.ex. <code>Gardevoir-Mega</code>. Les mégas inédites de Champions (Méga-Méganium…) ne sont pas encore dans le moteur. Talent auto si laissé vide.</p>
       </section>
       <section class="panel" data-panel="dex" hidden>
         <div class="field"><span>Chercher un Pokémon</span><div class="pick"><input list="dl-species" id="dex-search" placeholder="ex. Tyranocif" autocomplete="off">${LBTN('dex-search','dl-species')}</div></div>
         <div id="dex-out" class="dexcard"><div class="hint">Cherche un Pokémon pour voir ses stats de base.</div></div>
       </section>
     </div>
-    <div class="dock" id="dock">
-      <button type="button" id="dockToggle" class="dock-bar" aria-expanded="true" aria-label="Afficher ou masquer le résultat">
+    <div class="dock collapsed" id="dock">
+      <button type="button" id="dockToggle" class="dock-bar" aria-expanded="false" aria-label="Afficher ou masquer le résultat">
         <span class="dock-label">Résultat</span>
         <span id="dock-mini" class="dock-mini"></span>
         <svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -600,12 +628,8 @@ let timer; function schedule(){ clearTimeout(timer); timer=setTimeout(compute,14
   document.querySelector('.app-shell').addEventListener('input', schedule, true);
   document.querySelector('.app-shell').addEventListener('change', schedule, true);
   $('gen').addEventListener('change', ()=>{ buildGen(parseInt($('gen').value,10)); compute(); });
-  $('rosterOnly').addEventListener('change', ()=>{ fillSpecies(); compute(); });
+  $('rosterOnly').addEventListener('change', ()=>{ fillSpecies(); fillItems(); compute(); });
   setupPicker();
-  $('atk-species').value='Gardevoir'; $('atk-nature').value='Timid';
-  $('atk-ev-spa').value=32; $('atk-ev-spe').value=32; $('atk-item').value='Lunettes Choix';
-  $('def-species').value='Tyranocif'; $('def-nature').value='Adamant';
-  $('def-ev-hp').value=32; $('def-ev-spd').value=2; $('move').value='Pouvoir Lunaire';
   compute();
 })();
 </script>
