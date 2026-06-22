@@ -260,6 +260,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
     .scroll.show-dex .panel[data-panel=dex]{display:block;max-width:680px;margin:0 auto}
     .scroll.show-dex ~ .dock{display:none}
   }
+  .topbar select#gen{width:auto;max-width:200px}
+  /* cases à cocher natives (corrige le saut au clic) */
+  input[type=checkbox]{-webkit-appearance:auto;appearance:auto;width:auto;height:auto;min-height:0;padding:0;margin:0;border:none;background:none;border-radius:0;box-shadow:none;transition:none;accent-color:var(--accent);flex:none}
+  input[type=checkbox]:focus{box-shadow:none;outline:none}
+  .scroll{overflow-anchor:none}
 </style>
 </head>
 <body>
@@ -505,7 +510,7 @@ function render(){
         </div>
         <div class="checks">
           <span style="color:var(--muted);font-size:12px;font-weight:600">Côté défenseur :</span>
-          <label><input type="checkbox" id="reflect"> Mur de Fer</label>
+          <label><input type="checkbox" id="reflect"> Protection</label>
           <label><input type="checkbox" id="lightscreen"> Mur Lumière</label>
           <label><input type="checkbox" id="auroraveil"> Voile Aurore</label>
         </div>
@@ -622,7 +627,7 @@ function compute(){
   if($('crit').checked) extra.push('coup critique');
   const wv=$('weather').value; if(wv) extra.push(FRWEATHER[wv]||wv);
   const tv=$('terrain').value; if(tv) extra.push(FRTERRAIN[tv]||tv);
-  if($('reflect').checked) extra.push('Mur de Fer');
+  if($('reflect').checked) extra.push('Protection');
   if($('lightscreen').checked) extra.push('Mur Lumière');
   if($('auroraveil').checked) extra.push('Voile Aurore');
   if($('gametype').value==='Doubles') extra.push('combat double');
