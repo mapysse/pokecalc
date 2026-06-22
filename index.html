@@ -246,6 +246,20 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   .movebar{margin-top:9px;padding:12px}
   .critwrap{padding-bottom:7px}
   .dock-bar{padding-bottom:6px}
+  /* ===== Desktop : Pokédex séparé du calculateur ===== */
+  .desknav{display:none}
+  @media(min-width:760px){
+    .app-shell{max-width:1040px}
+    .desknav{display:flex;gap:8px;padding:2px 12px 10px}
+    .dnav{flex:0 0 auto;padding:10px 20px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:.13s}
+    .dnav:hover{color:var(--text)}
+    .dnav.active{background:var(--surface-2);color:var(--text);border-color:var(--line-2)}
+    .panel[data-panel=dex]{display:none}
+    .scroll.show-dex{display:block}
+    .scroll.show-dex .panel{display:none}
+    .scroll.show-dex .panel[data-panel=dex]{display:block;max-width:680px;margin:0 auto}
+    .scroll.show-dex ~ .dock{display:none}
+  }
 </style>
 </head>
 <body>
@@ -457,6 +471,10 @@ function setupPicker(){
 }
 function render(){
   $('app').innerHTML = `
+    <div class="desknav">
+      <button type="button" class="dnav active" data-view="calc">Calculateur</button>
+      <button type="button" class="dnav" data-view="dex">Pokédex</button>
+    </div>
     <div class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="atk"><span class="pip"></span>Attaquant</button>
       <button type="button" class="tab" data-tab="def"><span class="pip"></span>Défenseur</button>
@@ -507,7 +525,16 @@ function render(){
       <div id="readout"><div class="hint">Choisis un attaquant, un défenseur et une attaque pour lancer le combat.</div></div>
     </div>
   `;
-  setupTabs(); setupDex(); setupDock();
+  setupTabs(); setupDex(); setupDock(); setupDeskNav();
+}
+function setupDeskNav(){
+  const nav=[...document.querySelectorAll('.dnav')]; if(!nav.length) return;
+  const sc=document.querySelector('.scroll');
+  nav.forEach(b=>b.addEventListener('click',()=>{
+    nav.forEach(x=>x.classList.toggle('active',x===b));
+    sc.classList.toggle('show-dex', b.dataset.view==='dex');
+    sc.scrollTop=0;
+  }));
 }
 function setupDock(){
   const t=$('dockToggle'); if(!t) return;
