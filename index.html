@@ -255,16 +255,48 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
     .dnav:hover{color:var(--text)}
     .dnav.active{background:var(--surface-2);color:var(--text);border-color:var(--line-2)}
     .panel[data-panel=dex]{display:none}
+    .panel[data-panel=team]{display:none}
     .scroll.show-dex{display:block}
     .scroll.show-dex .panel{display:none}
     .scroll.show-dex .panel[data-panel=dex]{display:block;max-width:680px;margin:0 auto}
     .scroll.show-dex ~ .dock{display:none}
+    .scroll.show-team{display:block}
+    .scroll.show-team .panel{display:none}
+    .scroll.show-team .panel[data-panel=team]{display:block;max-width:680px;margin:0 auto}
+    .scroll.show-team ~ .dock{display:none}
   }
   .topbar select#gen{width:auto;max-width:200px}
   /* cases à cocher natives (corrige le saut au clic) */
   input[type=checkbox]{-webkit-appearance:auto;appearance:auto;width:auto;height:auto;min-height:0;padding:0;margin:0;border:none;background:none;border-radius:0;box-shadow:none;transition:none;accent-color:var(--accent);flex:none}
   input[type=checkbox]:focus{box-shadow:none;outline:none}
   .scroll{overflow-anchor:none}
+  /* ===== Sets enregistrés + inverser ===== */
+  .topsub-right{display:flex;align-items:center;gap:10px}
+  .mini-btn{background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:6px 11px;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer;min-height:34px;white-space:nowrap}
+  .mini-btn:active{opacity:.6}
+  .sets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .setchip{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+  .setchip .setload{background:none;border:none;color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 4px 8px 11px;cursor:pointer;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .setchip .setdel{background:none;border:none;color:var(--dim);font-size:12px;padding:8px 9px;cursor:pointer}
+  .setchip .setdel:active{color:var(--hp-lo)}
+  .setadd{background:none;border:1px dashed var(--line-2);border-radius:8px;color:var(--muted);font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 12px;cursor:pointer;min-height:36px}
+  .setadd:active{opacity:.6}
+  .tab[data-tab=team].active{color:var(--accent);border-color:var(--accent)}
+  .sets .setload{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;padding:8px 12px;cursor:pointer;min-height:36px;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sets .setload:active{opacity:.6}
+  .sets-empty{color:var(--dim);font-size:12px;font-weight:600}
+  .save-btn{width:100%;margin-top:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;min-height:48px}
+  .save-btn:active{opacity:.8}
+  .teamlist{margin-top:18px;display:flex;flex-direction:column;gap:7px}
+  .teamlist-h{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+  .teamrow{display:flex;align-items:stretch;gap:7px}
+  .teamedit{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:9px;color:var(--text);font-family:inherit;font-weight:600;font-size:13.5px;padding:11px 13px;cursor:pointer;text-align:left;min-height:44px}
+  .teamedit:active{opacity:.6}
+  .teamnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .teamsp{color:var(--gold);font-size:12px;font-weight:600;white-space:nowrap;flex:none}
+  .teamdel{flex:none;background:var(--surface-2);border:1px solid var(--line-2);border-radius:9px;color:var(--dim);font-size:13px;padding:0 14px;cursor:pointer;min-width:44px}
+  .teamdel:active{color:var(--hp-lo)}
+  .mon.team{border-top:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -290,7 +322,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   </div>
   <div class="topsub">
     <label class="rtoggle"><input type="checkbox" id="rosterOnly" checked> Roster Champions</label>
-    <span id="rosterCount" class="rcount"></span>
+    <div class="topsub-right">
+      <button type="button" id="swapBtn" class="mini-btn" title="Inverser attaquant et défenseur">⇄ Inverser</button>
+      <span id="rosterCount" class="rcount"></span>
+    </div>
   </div>
   <div id="app"><div class="loading"><div class="spinner"></div>Connexion à l'arène…</div></div>
 </div>
@@ -380,9 +415,8 @@ function buildGen(n){
 }
 
 function monBlock(side){
-  const cls = side==='atk'?'atk':'def';
-  const role = side==='atk'?'Attaquant':'Défenseur';
-  const tag  = side==='atk'?'Toi':'Adversaire';
+  const cls = side==='atk'?'atk':side==='def'?'def':'team';
+  const role = side==='atk'?'Attaquant':side==='def'?'Défenseur':'Fiche du set';
   const evCells = STATS.map(([k,lab])=>`
     <div class="ev"><label>${lab}<span class="bo" id="${side}-bo-${k}"></span></label>
       <input type="number" min="0" max="32" step="1" value="0" id="${side}-ev-${k}" inputmode="numeric"></div>`).join('');
@@ -394,7 +428,8 @@ function monBlock(side){
   }).join('');
   return `
   <section class="mon ${cls}">
-    <div class="role"><span class="dot"></span>${role}<span class="tag">${tag}</span></div>
+    <div class="role"><span class="dot"></span>${role}</div>
+    ${side==='team'?'':`<div class="sets" id="${side}-sets"></div>`}
     <div class="field"><span>Pokémon</span><div class="pick"><input list="dl-species" id="${side}-species" placeholder="ex. Gardevoir" autocomplete="off">${LBTN(side+'-species','dl-species')}</div></div>
     <div class="row">
       <div class="field"><span>Nature</span><select class="nature" id="${side}-nature"></select></div>
@@ -474,17 +509,89 @@ function setupPicker(){
   $('picker-close').addEventListener('click',closePicker);
   $('picker').addEventListener('click',e=>{ if(e.target.id==='picker') closePicker(); });
 }
+const SPK=['hp','atk','def','spa','spd','spe'];
+function lsGet(k){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;} }
+function lsSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+function loadSets(){ return lsGet('pc-sets')||[]; }
+function saveSets(a){ lsSet('pc-sets',a); }
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getSide(side){
+  const sp={}; SPK.forEach(k=>sp[k]=$(`${side}-ev-${k}`).value);
+  const bo={}; BOOSTABLE.forEach(k=>bo[k]=$(`${side}-boost-${k}`).value);
+  return {species:$(`${side}-species`).value,nature:$(`${side}-nature`).value,level:$(`${side}-level`).value,
+    item:$(`${side}-item`).value,ability:$(`${side}-ability`).value,status:$(`${side}-status`).value,tera:$(`${side}-tera`).value,sp,bo};
+}
+function setSide(side,c){
+  if(!c) return;
+  const set=(id,v)=>{const el=$(id); if(el&&v!=null) el.value=v;};
+  set(`${side}-species`,c.species);set(`${side}-nature`,c.nature);set(`${side}-level`,c.level);
+  set(`${side}-item`,c.item);set(`${side}-ability`,c.ability);set(`${side}-status`,c.status);set(`${side}-tera`,c.tera);
+  if(c.sp) SPK.forEach(k=>set(`${side}-ev-${k}`,c.sp[k]));
+  if(c.bo) BOOSTABLE.forEach(k=>set(`${side}-boost-${k}`,c.bo[k]));
+  if(side==='team') updateTeamStats(); else compute();
+}
+function renderSets(side){
+  const wrap=$(`${side}-sets`); if(!wrap) return;
+  const sets=loadSets();
+  if(!sets.length){ wrap.innerHTML=`<span class="sets-empty">Aucun set — crée-en dans l'onglet Équipes</span>`; return; }
+  wrap.innerHTML = sets.map((s,i)=>`<button type="button" class="setload" data-side="${side}" data-i="${i}">${escHtml(s.name)}</button>`).join('');
+}
+function renderTeamList(){
+  const wrap=$('team-list'); if(!wrap) return;
+  const sets=loadSets();
+  if(!sets.length){ wrap.innerHTML=`<div class="hint">Aucun set enregistré pour l'instant.</div>`; return; }
+  wrap.innerHTML = `<div class="teamlist-h">Sets enregistrés</div>` + sets.map((s,i)=>`<div class="teamrow"><button type="button" class="teamedit" data-i="${i}"><span class="teamnm">${escHtml(s.name)}</span><span class="teamsp">${escHtml(s.cfg.species||'')}</span></button><button type="button" class="teamdel" data-i="${i}" aria-label="Supprimer ce set">✕</button></div>`).join('');
+}
+function updateTeamStats(){ if(!$('team-species')) return; const m=buildPokemon('team'); updateEVmeta('team', m); }
+function setupSets(){
+  document.addEventListener('click', e=>{
+    const load=e.target.closest('.setload');
+    if(load){ const s=loadSets()[+load.dataset.i]; if(s){ setSide(load.dataset.side,s.cfg); saveState(); } return; }
+    const edit=e.target.closest('.teamedit');
+    if(edit){ const s=loadSets()[+edit.dataset.i]; if(s){ setSide('team',s.cfg); const nm=$('team-name'); if(nm) nm.value=s.name; } return; }
+    const del=e.target.closest('.teamdel');
+    if(del){ const sets=loadSets(); sets.splice(+del.dataset.i,1); saveSets(sets); renderTeamList(); renderSets('atk'); renderSets('def'); return; }
+    if(e.target.closest('#team-save')){
+      const cfg=getSide('team'); if(!cfg.species){ alert('Choisis d\u2019abord un Pokémon dans la fiche du set.'); return; }
+      const nm=$('team-name'); const name=(nm&&nm.value.trim())||cfg.species;
+      const sets=loadSets(); sets.push({name,cfg}); saveSets(sets);
+      renderTeamList(); renderSets('atk'); renderSets('def');
+      if(nm) nm.value='';
+      return;
+    }
+  });
+}
+function swapSides(){ const a=getSide('atk'), d=getSide('def'); setSide('atk',d); setSide('def',a); saveState(); }
+function saveState(){
+  lsSet('pc-state',{gen:genNum,roster:$('rosterOnly').checked,atk:getSide('atk'),def:getSide('def'),
+    move:$('move').value,crit:$('crit').checked,weather:$('weather').value,terrain:$('terrain').value,gametype:$('gametype').value,
+    reflect:$('reflect').checked,lightscreen:$('lightscreen').checked,auroraveil:$('auroraveil').checked});
+}
+function restoreState(){
+  const st=lsGet('pc-state'); if(!st) return;
+  try{
+    if(st.gen && st.gen!==genNum){ $('gen').value=st.gen; buildGen(st.gen); }
+    if(typeof st.roster==='boolean' && st.roster!==$('rosterOnly').checked){ $('rosterOnly').checked=st.roster; fillSpecies(); fillItems(); }
+    const set=(id,v)=>{const el=$(id); if(el&&v!=null) el.value=v;};
+    setSide('atk',st.atk); setSide('def',st.def);
+    set('move',st.move); $('crit').checked=!!st.crit;
+    set('weather',st.weather); set('terrain',st.terrain); set('gametype',st.gametype);
+    $('reflect').checked=!!st.reflect; $('lightscreen').checked=!!st.lightscreen; $('auroraveil').checked=!!st.auroraveil;
+  }catch(e){}
+}
 function render(){
   $('app').innerHTML = `
     <div class="desknav">
       <button type="button" class="dnav active" data-view="calc">Calculateur</button>
       <button type="button" class="dnav" data-view="dex">Pokédex</button>
+      <button type="button" class="dnav" data-view="team">Équipes</button>
     </div>
     <div class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="atk"><span class="pip"></span>Attaquant</button>
       <button type="button" class="tab" data-tab="def"><span class="pip"></span>Défenseur</button>
       <button type="button" class="tab" data-tab="field"><span class="pip"></span>Terrain</button>
       <button type="button" class="tab" data-tab="dex"><span class="pip"></span>Pokédex</button>
+      <button type="button" class="tab" data-tab="team"><span class="pip"></span>Équipes</button>
     </div>
     <div class="scroll">
       <section class="panel" data-panel="atk">
@@ -520,6 +627,13 @@ function render(){
         <div class="field"><span>Chercher un Pokémon</span><div class="pick"><input list="dl-species" id="dex-search" placeholder="ex. Tyranocif" autocomplete="off">${LBTN('dex-search','dl-species')}</div></div>
         <div id="dex-out" class="dexcard"><div class="hint">Cherche un Pokémon pour voir ses stats de base.</div></div>
       </section>
+      <section class="panel" data-panel="team" hidden>
+        <p class="hint footnote">Crée ici tes Pokémon configurés (objet, nature, SP, talent, téra…). Tu pourras ensuite les charger en 1 tap depuis <b>Attaquant</b> ou <b>Défenseur</b>.</p>
+        <div class="field"><span>Nom du set</span><input id="team-name" placeholder="ex. Gardevoir Lunettes Choix" autocomplete="off"></div>
+        ${monBlock('team')}
+        <button type="button" id="team-save" class="save-btn">Enregistrer le set</button>
+        <div class="teamlist" id="team-list"></div>
+      </section>
     </div>
     <div class="dock collapsed" id="dock">
       <button type="button" id="dockToggle" class="dock-bar" aria-expanded="false" aria-label="Afficher ou masquer le résultat">
@@ -538,6 +652,7 @@ function setupDeskNav(){
   nav.forEach(b=>b.addEventListener('click',()=>{
     nav.forEach(x=>x.classList.toggle('active',x===b));
     sc.classList.toggle('show-dex', b.dataset.view==='dex');
+    sc.classList.toggle('show-team', b.dataset.view==='team');
     sc.scrollTop=0;
   }));
 }
@@ -651,7 +766,7 @@ function compute(){
   `;
 }
 
-let timer; function schedule(){ clearTimeout(timer); timer=setTimeout(compute,140); }
+let timer; function schedule(){ clearTimeout(timer); timer=setTimeout(()=>{compute(); saveState();},80); }
 
 (async function init(){
   try{ calc=await load(); }
@@ -662,6 +777,11 @@ let timer; function schedule(){ clearTimeout(timer); timer=setTimeout(compute,14
   $('gen').addEventListener('change', ()=>{ buildGen(parseInt($('gen').value,10)); compute(); });
   $('rosterOnly').addEventListener('change', ()=>{ fillSpecies(); fillItems(); compute(); });
   setupPicker();
+  setupSets(); renderSets('atk'); renderSets('def'); renderTeamList();
+  const teamP=document.querySelector('[data-panel=team]');
+  if(teamP){ teamP.addEventListener('input', updateTeamStats); teamP.addEventListener('change', updateTeamStats); }
+  $('swapBtn').addEventListener('click', swapSides);
+  restoreState(); updateTeamStats();
   compute();
 })();
 </script>
