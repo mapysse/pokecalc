@@ -102,6 +102,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .hp-band{position:absolute;top:0;bottom:0;transition:left .4s,width .4s;background:repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 7px,rgba(255,255,255,.06) 7px 14px)}
 .hp-sub{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted)}
 #move-count-wrap{grid-column:1 / -1}
+#so-count-wrap{grid-column:1 / -1}
+#so-count{width:90px}
 #move-count{width:90px}
 .verdict-line{display:flex;align-items:center;gap:9px;margin-top:10px;font-weight:700;font-size:clamp(15px,4.3vw,18px);letter-spacing:-.01em}
 .verdict-line .stamp{font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:6px;border:1.5px solid currentColor;text-transform:uppercase}
@@ -129,6 +131,25 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .dextotal{margin-top:7px;border-top:1px solid var(--line);padding-top:10px}
 .dextotal .dexlab,.dextotal .dexval{color:var(--gold)}
 .dextotal .dexbar i{background:var(--gold)}
+.dexmoves{margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
+.dexmode{display:flex;gap:6px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:4px}
+.dexmode-btn{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:13px;padding:9px;border-radius:7px;cursor:pointer;transition:background .15s,color .15s}
+.dexmode-btn.active{background:var(--accent);color:#fff}
+.dexmove-card{display:flex;flex-direction:column;gap:10px}
+.dexmoves-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.dexmoves-n{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--gold);background:var(--surface-2);border-radius:5px;padding:1px 7px}
+.mvlist{display:flex;flex-direction:column;gap:5px}
+.mvrow{border:1px solid var(--line);border-radius:9px;background:var(--surface-2);overflow:hidden}
+.mvhead{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:none;color:var(--text);font-family:inherit;font-weight:600;font-size:13px;padding:10px 12px;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+.mvhead:active{background:var(--surface-3)}
+.mvchev{color:var(--muted);font-size:18px;line-height:1;transition:transform .2s}
+.mvrow.open .mvchev{transform:rotate(90deg)}
+.mvbody{padding:0 12px 11px;display:flex;flex-direction:column;gap:8px}
+.mvtags{display:flex;align-items:center;gap:8px}
+.mvcat{font-size:11px;font-weight:700;color:var(--muted)}
+.mvstats{display:flex;gap:16px;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
+.mvstats b{color:var(--text);font-weight:700}
+.mveff{font-size:12px;color:var(--muted);line-height:1.5}
 
 .pick{display:flex;gap:7px;align-items:stretch}
 .pick input{flex:1;min-width:0}
@@ -548,9 +569,9 @@ function dexId(en){ return (en||'').toLowerCase().normalize('NFD').replace(/[\u0
 function renderDex(){
   const out=$('dex-out'); if(!out) return;
   const raw=$('dex-search').value.trim();
-  if(!raw){ out.innerHTML='<div class="hint">Cherche un Pokémon pour voir ses stats de base.</div>'; return; }
+  if(!raw){ out.innerHTML='<div class="hint">Cherche un Pokémon pour voir ses stats de base.</div>'; dexCurrentMon=null; return; }
   let sp=null; try{ sp=gen.species.get(dexId(toEN('species',raw))); }catch(e){}
-  if(!sp){ out.innerHTML=`<div class="hint">Pokémon introuvable dans la Gen ${genNum}.</div>`; return; }
+  if(!sp){ out.innerHTML=`<div class="hint">Pokémon introuvable dans la Gen ${genNum}.</div>`; dexCurrentMon=null; return; }
   const bs=sp.baseStats, bst=STATS.reduce((a,[k])=>a+bs[k],0);
   const types=(sp.types||[]).map(t=>`<span class="tchip" style="background:${TYPECOLOR[t]||'#555'}">${frName('types',t)}</span>`).join('');
   const ab=Object.values(sp.abilities||{}).map(a=>frName('abilities',a)).join(', ');
@@ -558,9 +579,106 @@ function renderDex(){
   out.innerHTML=`<div class="dexhead"><div class="dexname">${frName('species',sp.name)}</div><div class="dextypes">${types}</div></div>
     <div class="dexmeta">Talents : <b>${ab||'—'}</b>${sp.weightkg?` · ${sp.weightkg} kg`:''}</div>
     ${rows}
-    <div class="dexrow dextotal"><span class="dexlab">Total</span><span class="dexval">${bst}</span><span class="dexbar"><i style="width:${Math.min(100,bst/720*100)}%"></i></span></div>`;
+    <div class="dexrow dextotal"><span class="dexlab">Total</span><span class="dexval">${bst}</span><span class="dexbar"><i style="width:${Math.min(100,bst/720*100)}%"></i></span></div>
+    <div id="dex-moves" class="dexmoves"></div>`;
+  if(sp.name!==dexCurrentMon){ dexCurrentMon=sp.name; loadMovePool(sp.name); }
 }
-function setupDex(){ const i=$('dex-search'); if(i) i.addEventListener('input', renderDex); }
+
+// ===== Move pool via PokéAPI =====
+const POKE_API='https://pokeapi.co/api/v2/';
+const pokeCache={mon:{},move:{},abil:{}};
+let dexCurrentMon=null, dexReqId=0, MOVE_FR_BY_NORM=null;
+function cap(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+function apiMonId(en){ return (en||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function moveFrFromId(id){
+  if(!MOVE_FR_BY_NORM){ MOVE_FR_BY_NORM={}; const d=(typeof FR!=='undefined'&&FR.moves)||{}; for(const en in d) MOVE_FR_BY_NORM[normKey(en)]=d[en]; }
+  return MOVE_FR_BY_NORM[normKey(id)] || id.split('-').map(cap).join(' ');
+}
+async function fetchJSON(url){ const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function loadMovePool(enName){
+  const host=$('dex-moves'); if(!host) return;
+  const reqId=++dexReqId;
+  host.innerHTML='<div class="dexmoves-h">Capacités apprenables</div><div class="hint">Chargement depuis PokéAPI…</div>';
+  const id=apiMonId(enName);
+  let data;
+  try{ data = pokeCache.mon[id] || (pokeCache.mon[id]=await fetchJSON(POKE_API+'pokemon/'+id)); }
+  catch(e){ if(reqId===dexReqId) host.innerHTML='<div class="dexmoves-h">Capacités apprenables</div><div class="hint">Liste indisponible (Pokémon absent de PokéAPI — peut-être un contenu propre à Champions).</div>'; return; }
+  if(reqId!==dexReqId) return;
+  const seen=new Set(), moves=[];
+  for(const m of (data.moves||[])){ const n=m.move.name; if(!seen.has(n)){ seen.add(n); moves.push(n); } }
+  moves.sort((a,b)=>moveFrFromId(a).localeCompare(moveFrFromId(b),'fr'));
+  const rows=moves.map(n=>`<div class="mvrow" data-move="${n}"><button type="button" class="mvhead"><span class="mvname">${escHtml(moveFrFromId(n))}</span><span class="mvchev">›</span></button><div class="mvbody" hidden></div></div>`).join('');
+  host.innerHTML=`<div class="dexmoves-h">Capacités apprenables <span class="dexmoves-n">${moves.length}</span></div><div class="mvlist">${rows||'<div class="hint">Aucune attaque listée.</div>'}</div>`;
+}
+function moveDetailHtml(m){
+  const typ=cap(m.type&&m.type.name), color=TYPECOLOR[typ]||'#555';
+  const cat={physical:'Physique',special:'Spéciale',status:'Statut'}[m.damage_class&&m.damage_class.name]||'';
+  const frE=(m.flavor_text_entries||[]).filter(e=>e.language&&e.language.name==='fr').pop();
+  const eff=frE? frE.flavor_text.replace(/[\n\f\r]+/g,' ').trim() : '';
+  return `<div class="mvtags"><span class="tchip" style="background:${color}">${frName('types',typ)}</span><span class="mvcat">${cat}</span></div>
+    <div class="mvstats"><span>Puiss. <b>${m.power==null?'—':m.power}</b></span><span>Préc. <b>${m.accuracy==null?'—':m.accuracy}</b></span><span>PP <b>${m.pp==null?'—':m.pp}</b></span></div>
+    ${eff?`<div class="mveff">${escHtml(eff)}</div>`:''}`;
+}
+function apiMoveId(en){ return (en||'').toLowerCase().replace(/['’.:]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+let dexMoveReq=0, dexMode='mon';
+async function renderMoveSearch(){
+  const out=$('dex-out'); if(!out) return;
+  const raw=$('dexmove-search').value.trim();
+  if(!raw){ out.innerHTML='<div class="hint">Cherche une attaque pour voir puissance, précision, PP et effet.</div>'; return; }
+  const en=toEN('moves',raw), id=apiMoveId(en), req=++dexMoveReq;
+  out.innerHTML='<div class="hint">Chargement depuis PokéAPI…</div>';
+  let m;
+  try{ m=pokeCache.move[id]||(pokeCache.move[id]=await fetchJSON(POKE_API+'move/'+id)); }
+  catch(e){ if(req===dexMoveReq) out.innerHTML=`<div class="hint">Attaque introuvable sur PokéAPI (« ${escHtml(raw)} ») — peut-être propre à Champions.</div>`; return; }
+  if(req!==dexMoveReq) return;
+  out.innerHTML=`<div class="dexname" style="font-size:20px;margin-bottom:8px">${escHtml(frName('moves',en))}</div><div class="dexmove-card">${moveDetailHtml(m)}</div>`;
+}
+function setDexMode(mode){
+  dexMode=mode;
+  document.querySelectorAll('.dexmode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  if($('dex-mon-field')) $('dex-mon-field').hidden = mode!=='mon';
+  if($('dex-move-field')) $('dex-move-field').hidden = mode!=='move';
+  if($('dex-abil-field')) $('dex-abil-field').hidden = mode!=='abil';
+  if(mode==='mon'){ dexCurrentMon=null; renderDex(); }
+  else if(mode==='move') renderMoveSearch();
+  else renderAbilSearch();
+}
+async function renderAbilSearch(){
+  const out=$('dex-out'); if(!out) return;
+  const raw=$('dexabil-search').value.trim();
+  if(!raw){ out.innerHTML='<div class="hint">Cherche un talent pour voir son effet en français.</div>'; return; }
+  const en=toEN('abilities',raw), id=apiMoveId(en), req=++dexMoveReq;
+  out.innerHTML='<div class="hint">Chargement depuis PokéAPI…</div>';
+  let a;
+  try{ a=pokeCache.abil[id]||(pokeCache.abil[id]=await fetchJSON(POKE_API+'ability/'+id)); }
+  catch(e){ if(req===dexMoveReq) out.innerHTML=`<div class="hint">Talent introuvable sur PokéAPI (« ${escHtml(raw)} ») — peut-être propre à Champions.</div>`; return; }
+  if(req!==dexMoveReq) return;
+  let txt='';
+  const fl=(a.flavor_text_entries||[]).filter(e=>e.language&&e.language.name==='fr').pop();
+  if(fl) txt=fl.flavor_text.replace(/[\n\f\r]+/g,' ').trim();
+  if(!txt){ const ef=(a.effect_entries||[]).filter(e=>e.language&&e.language.name==='fr').pop(); if(ef) txt=(ef.short_effect||ef.effect||'').replace(/[\n\f\r]+/g,' ').trim(); }
+  if(!txt){ const ee=(a.effect_entries||[]).find(e=>e.language&&e.language.name==='en'); if(ee) txt=(ee.short_effect||ee.effect||'').replace(/[\n\f\r]+/g,' ').trim(); }
+  out.innerHTML=`<div class="dexname" style="font-size:20px;margin-bottom:8px">${escHtml(frName('abilities',en))}</div><div class="dexmove-card"><div class="mveff">${txt?escHtml(txt):'Description indisponible.'}</div></div>`;
+}
+async function toggleMove(row){
+  const body=row.querySelector('.mvbody'), name=row.getAttribute('data-move');
+  if(!body.hidden){ body.hidden=true; row.classList.remove('open'); return; }
+  row.classList.add('open'); body.hidden=false;
+  if(body.dataset.loaded) return;
+  body.innerHTML='<span class="hint">…</span>';
+  let m;
+  try{ m = pokeCache.move[name] || (pokeCache.move[name]=await fetchJSON(POKE_API+'move/'+name)); }
+  catch(e){ body.innerHTML='<span class="hint">Détails indisponibles.</span>'; return; }
+  body.dataset.loaded='1';
+  body.innerHTML=moveDetailHtml(m);
+}
+function setupDex(){
+  const i=$('dex-search'); if(i) i.addEventListener('input', renderDex);
+  const ms=$('dexmove-search'); if(ms) ms.addEventListener('input', renderMoveSearch);
+  const as=$('dexabil-search'); if(as) as.addEventListener('input', renderAbilSearch);
+  document.querySelectorAll('.dexmode-btn').forEach(b=>b.addEventListener('click', ()=>setDexMode(b.dataset.mode)));
+  const o=$('dex-out'); if(o) o.addEventListener('click', e=>{ const h=e.target.closest('.mvhead'); if(h){ const row=h.closest('.mvrow'); if(row) toggleMove(row); } });
+}
 const LBTN=(t,l)=>`<button type="button" class="pickbtn" data-target="${t}" data-list="${l}" aria-label="Choisir dans la liste"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></button>`;
 let pickerTarget=null, pickerAll=[];
 function openPicker(targetId,listId){
@@ -679,6 +797,7 @@ function render(){
           <div class="field"><span>Attaque utilisée par l'attaquant</span><div class="pick"><input list="dl-moves" id="move" placeholder="ex. Pouvoir Lunaire" autocomplete="off">${LBTN('move','dl-moves')}</div></div>
           <label class="critwrap"><input type="checkbox" id="crit"> Coup critique</label>
           <div class="field" id="move-count-wrap" hidden><span id="move-count-label">Compteur</span><input type="number" id="move-count" min="0" max="6" step="1" value="0" inputmode="numeric"></div>
+          <div class="field" id="so-count-wrap" hidden><span>Alliés mis K.O. — Général Suprême (0–5)</span><input type="number" id="so-count" min="0" max="5" step="1" value="0" inputmode="numeric"></div>
         </div>
       </section>
       <section class="panel" data-panel="def" hidden>
@@ -709,7 +828,14 @@ function render(){
         </div>
       </section>
       <section class="panel" data-panel="dex" hidden>
-        <div class="field"><span>Chercher un Pokémon</span><div class="pick"><input list="dl-species" id="dex-search" placeholder="ex. Tyranocif" autocomplete="off">${LBTN('dex-search','dl-species')}</div></div>
+        <div class="dexmode">
+          <button type="button" class="dexmode-btn active" data-mode="mon">Pokémon</button>
+          <button type="button" class="dexmode-btn" data-mode="move">Attaque</button>
+          <button type="button" class="dexmode-btn" data-mode="abil">Talent</button>
+        </div>
+        <div class="field" id="dex-mon-field"><span>Chercher un Pokémon</span><div class="pick"><input list="dl-species" id="dex-search" placeholder="ex. Tyranocif" autocomplete="off">${LBTN('dex-search','dl-species')}</div></div>
+        <div class="field" id="dex-move-field" hidden><span>Chercher une attaque</span><div class="pick"><input list="dl-moves" id="dexmove-search" placeholder="ex. Lance-Flammes" autocomplete="off">${LBTN('dexmove-search','dl-moves')}</div></div>
+        <div class="field" id="dex-abil-field" hidden><span>Chercher un talent</span><div class="pick"><input list="dl-abilities" id="dexabil-search" placeholder="ex. Intimidation" autocomplete="off">${LBTN('dexabil-search','dl-abilities')}</div></div>
         <div id="dex-out" class="dexcard"><div class="hint">Cherche un Pokémon pour voir ses stats de base.</div></div>
       </section>
       <section class="panel" data-panel="team" hidden>
@@ -764,7 +890,8 @@ function buildPokemon(side){
   let name=toEN('species',raw);
   const opts={ level:num(`${side}-level`,50), nature:$(`${side}-nature`).value, evs:readEVs(side), boosts:readBoosts(side) };
   const item=$(`${side}-item`).value.trim(); let itemEN; if(item){ itemEN=toEN('items',item); opts.item=itemEN; }
-  const ab=$(`${side}-ability`).value.trim(); if(ab) opts.ability=toEN('abilities',ab);
+  const ab=$(`${side}-ability`).value.trim(); let abEN; if(ab){ abEN=toEN('abilities',ab); opts.ability=abEN; }
+  if(abEN==='Supreme Overlord') opts.alliesFainted = Math.max(0, Math.min(5, num('so-count',0)));
   const st=$(`${side}-status`).value; if(st) opts.status=st;
   if(genNum===9){ const t=$(`${side}-tera`).value; if(t) opts.teraType=t; }
   // Méga-gemme : si l'objet est une méga-gemme correspondant à l'espèce, on méga-évolue
@@ -849,6 +976,12 @@ function updateCounterUI(enMove){
   else { wrap.hidden=true; }
   return c;
 }
+function updateSOCounterUI(){
+  const wrap=$('so-count-wrap'); if(!wrap) return;
+  const ab=$('atk-ability').value.trim();
+  const so = ab && toEN('abilities',ab)==='Supreme Overlord';
+  wrap.hidden = !so;
+}
 function isMegaName(n){ return /-(Mega|Primal)\b/.test(n||''); }
 // Talents corrects pour Champions là où le moteur diverge (données antérieures à une mise à jour)
 const MEGA_ABILITY_OVERRIDE = { 'Staraptor-Mega':'Contrary' };
@@ -885,7 +1018,7 @@ function resetAll(){
     SPK.forEach(k=>{ const el=$(`${side}-ev-${k}`); if(el) el.value='0'; });
     BOOSTABLE.forEach(k=>{ const el=$(`${side}-boost-${k}`); if(el) el.value='0'; });
   });
-  $('move').value=''; $('crit').checked=false; if($('move-count')) $('move-count').value='0';
+  $('move').value=''; $('crit').checked=false; if($('move-count')) $('move-count').value='0'; if($('so-count')) $('so-count').value='0';
   $('weather').value=''; $('terrain').value=''; $('gametype').value='Singles';
   $('reflect').checked=false; $('lightscreen').checked=false; $('auroraveil').checked=false;
   $('tw-atk').checked=false; $('tw-def').checked=false; $('trickroom').checked=false;
@@ -898,6 +1031,7 @@ function compute(){
   updateEVmeta('atk',atk); updateEVmeta('def',def);
   const out=$('readout'); const rawMove=$('move').value.trim(); const moveName=toEN('moves',rawMove);
   const counter = updateCounterUI(moveName);
+  updateSOCounterUI();
   const dm=$('dock-mini'); if(dm) dm.textContent='';
 
   if(atk===null||def===null||!rawMove){ out.innerHTML=`<div class="hint">Choisis un attaquant, un défenseur et une attaque pour lancer le combat.</div>`; return; }
