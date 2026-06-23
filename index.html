@@ -106,6 +106,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .verdict-line{display:flex;align-items:center;gap:9px;margin-top:10px;font-weight:700;font-size:clamp(15px,4.3vw,18px);letter-spacing:-.01em}
 .verdict-line .stamp{font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:6px;border:1.5px solid currentColor;text-transform:uppercase}
 .verdict-line.safe{color:var(--hp-hi)} .verdict-line.warn{color:var(--hp-mid)} .verdict-line.ko{color:var(--accent)}
+.speed-line{margin-top:9px;font-size:13px;font-weight:600;color:var(--lcd);display:flex;align-items:center;gap:6px;flex-wrap:wrap;letter-spacing:-.01em}
+.speed-line .spd-nums{font-family:"JetBrains Mono",monospace;font-weight:600;color:var(--muted);font-size:12px}
+.speed-line .spd-eq{color:var(--gold)}
 .desc{margin-top:9px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;line-height:1.5}
 .dock .hint{font-size:13px;margin:0}
 
@@ -113,6 +116,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .dexhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;flex-wrap:wrap}
 .dexname{font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--text)}
 .dextypes{display:flex;gap:6px;flex-wrap:wrap}
+.mtypes{margin-left:auto;display:flex;gap:5px;flex-wrap:wrap}
+.mtypes .tchip{padding:2px 9px;font-size:10px}
 .tchip{padding:3px 11px;border-radius:6px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.4)}
 .dexmeta{font-size:12px;color:var(--muted);margin-bottom:13px;line-height:1.55}
 .dexmeta b{color:var(--text);font-weight:600}
@@ -500,7 +505,7 @@ function monBlock(side){
   }).join('');
   return `
   <section class="mon ${cls}">
-    <div class="role"><span class="dot"></span>${role}</div>
+    <div class="role"><span class="dot"></span>${role}<span class="mtypes" id="${side}-types"></span></div>
     ${side==='team'?'':`<div class="sets" id="${side}-sets"></div>`}
     <div class="field"><span>Pokémon</span><div class="pick"><input list="dl-species" id="${side}-species" placeholder="ex. Gardevoir" autocomplete="off">${LBTN(side+'-species','dl-species')}</div></div>
     <div class="row">
@@ -637,7 +642,8 @@ function swapSides(){ const a=getSide('atk'), d=getSide('def'); setSide('atk',d)
 function saveState(){
   lsSet('pc-state',{gen:genNum,roster:$('rosterOnly').checked,atk:getSide('atk'),def:getSide('def'),
     move:$('move').value,crit:$('crit').checked,weather:$('weather').value,terrain:$('terrain').value,gametype:$('gametype').value,
-    reflect:$('reflect').checked,lightscreen:$('lightscreen').checked,auroraveil:$('auroraveil').checked});
+    reflect:$('reflect').checked,lightscreen:$('lightscreen').checked,auroraveil:$('auroraveil').checked,
+    tw_atk:$('tw-atk').checked,tw_def:$('tw-def').checked,trickroom:$('trickroom').checked});
 }
 function restoreState(){
   const st=lsGet('pc-state'); if(!st) return;
@@ -649,6 +655,7 @@ function restoreState(){
     set('move',st.move); $('crit').checked=!!st.crit;
     set('weather',st.weather); set('terrain',st.terrain); set('gametype',st.gametype);
     $('reflect').checked=!!st.reflect; $('lightscreen').checked=!!st.lightscreen; $('auroraveil').checked=!!st.auroraveil;
+    $('tw-atk').checked=!!st.tw_atk; $('tw-def').checked=!!st.tw_def; $('trickroom').checked=!!st.trickroom;
   }catch(e){}
 }
 function render(){
@@ -693,6 +700,12 @@ function render(){
           <label><input type="checkbox" id="reflect"> Protection</label>
           <label><input type="checkbox" id="lightscreen"> Mur Lumière</label>
           <label><input type="checkbox" id="auroraveil"> Voile Aurore</label>
+        </div>
+        <div class="checks">
+          <span style="color:var(--muted);font-size:12px;font-weight:600">Vitesse :</span>
+          <label><input type="checkbox" id="tw-atk"> Vent Arrière (attaquant)</label>
+          <label><input type="checkbox" id="tw-def"> Vent Arrière (défenseur)</label>
+          <label><input type="checkbox" id="trickroom"> Distorsion</label>
         </div>
       </section>
       <section class="panel" data-panel="dex" hidden>
@@ -778,9 +791,27 @@ function updateEVmeta(side, mon){
   } else if($(`${side}-species`).value.trim()){
     s.innerHTML = `<span style="color:var(--hp-lo)">Pokémon introuvable dans la Gen ${genNum}</span>`;
   } else s.textContent='—';
+  const tEl=$(`${side}-types`);
+  if(tEl) tEl.innerHTML = (mon && mon.types && mon.types.length)
+    ? mon.types.map(t=>`<span class="tchip" style="background:${TYPECOLOR[t]||'#555'}">${frName('types',t)}</span>`).join('')
+    : '';
 }
 
 function colorFor(pct){ return pct>50?'var(--hp-hi)':pct>20?'var(--hp-mid)':'var(--hp-lo)'; }
+
+// Vitesse effective : boosts, paralysie, objets, climat/terrain, Vent Arrière
+function effSpeed(side, mon){
+  let s = mon.stats.spe;
+  const stage = Math.max(-6, Math.min(6, num(`${side}-boost-spe`,0)));
+  s = stage>=0 ? s*(2+stage)/2 : s*2/(2-stage);
+  if(mon.status==='par') s*=0.5;
+  if(mon.item==='Choice Scarf') s*=1.5;
+  if(mon.item==='Iron Ball') s*=0.5;
+  const w=$('weather').value, t=$('terrain').value, ab=mon.ability;
+  if((ab==='Swift Swim'&&w==='Rain')||(ab==='Chlorophyll'&&w==='Sun')||(ab==='Sand Rush'&&w==='Sand')||(ab==='Slush Rush'&&(w==='Snow'||w==='Hail'))||(ab==='Surge Surfer'&&t==='Electric')) s*=2;
+  if($(`tw-${side}`)&&$(`tw-${side}`).checked) s*=2;
+  return Math.floor(s);
+}
 
 // Traduction du texte de probabilité de K.O.
 function frKO(s){
@@ -857,6 +888,7 @@ function resetAll(){
   $('move').value=''; $('crit').checked=false; if($('move-count')) $('move-count').value='0';
   $('weather').value=''; $('terrain').value=''; $('gametype').value='Singles';
   $('reflect').checked=false; $('lightscreen').checked=false; $('auroraveil').checked=false;
+  $('tw-atk').checked=false; $('tw-def').checked=false; $('trickroom').checked=false;
   try{ localStorage.removeItem('pc-state'); }catch(e){}
   compute();
 }
@@ -915,6 +947,14 @@ function compute(){
   if($('auroraveil').checked) extra.push('Voile Aurore');
   if($('gametype').value==='Doubles') extra.push('combat double');
 
+  // Ordre de vitesse
+  const spA=effSpeed('atk',atk), spD=effSpeed('def',def);
+  const tr=$('trickroom')&&$('trickroom').checked;
+  let speedHtml;
+  if(spA===spD){ speedHtml=`<span class="spd-eq">Vitesses égales (${spA}) — décidé par un tirage (speed tie)</span>`; }
+  else { const aFirst = tr ? spA<spD : spA>spD; const first = aFirst?atkFr:defFr; const fs=aFirst?spA:spD, ss=aFirst?spD:spA;
+    speedHtml=`<b>${first}</b> agit en premier <span class="spd-nums">(${fs} vs ${ss})</span>${tr?' · Distorsion':''}`; }
+
   if(dm) dm.textContent=`${fmt(pctMin)} – ${fmt(pctMax)} %`;
   out.innerHTML=`
     <div class="figure">
@@ -930,6 +970,7 @@ function compute(){
       <div class="hp-sub"><span>${Math.max(0,H-mx)} – ${Math.max(0,H-mn)} PV restants</span><span>${fmt(remMin)} – ${fmt(remMax)} %</span></div>
     </div>
     <div class="verdict-line ${cls}">${stamp}<span>${koFr||'—'}</span></div>
+    <div class="speed-line">⚡ ${speedHtml}</div>
     ${extra.length?`<div class="cond-note">${extra.join(' · ')}</div>`:''}
   `;
 }
