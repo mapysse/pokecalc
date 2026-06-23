@@ -132,7 +132,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .dextotal .dexlab,.dextotal .dexval{color:var(--gold)}
 .dextotal .dexbar i{background:var(--gold)}
 .dexmoves{margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
-.dexmode{display:flex;gap:6px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:4px}
+.dexmode{display:flex;gap:6px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:4px;flex-wrap:wrap}
+.fieldcard{border:1px solid var(--line);border-radius:9px;background:var(--surface-2);padding:11px 12px;display:flex;flex-direction:column;gap:5px}
+.fieldname{font-weight:700;font-size:13px;color:var(--text)}
 .dexmode-btn{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:13px;padding:9px;border-radius:7px;cursor:pointer;transition:background .15s,color .15s}
 .dexmode-btn.active{background:var(--accent);color:#fff}
 .dexmove-card{display:flex;flex-direction:column;gap:10px}
@@ -596,7 +598,7 @@ function renderDex(){
 
 // ===== Move pool via PokéAPI =====
 const POKE_API='https://pokeapi.co/api/v2/';
-const pokeCache={mon:{},move:{},abil:{}};
+const pokeCache={mon:{},move:{},abil:{},item:{}};
 let dexCurrentMon=null, dexReqId=0, MOVE_FR_BY_NORM=null;
 function cap(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 function apiMonId(en){ return (en||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
@@ -701,9 +703,45 @@ function setDexMode(mode){
   if($('dex-mon-field')) $('dex-mon-field').hidden = mode!=='mon';
   if($('dex-move-field')) $('dex-move-field').hidden = mode!=='move';
   if($('dex-abil-field')) $('dex-abil-field').hidden = mode!=='abil';
+  if($('dex-item-field')) $('dex-item-field').hidden = mode!=='item';
   if(mode==='mon'){ dexCurrentMon=null; renderDex(); }
   else if(mode==='move') renderMoveSearch();
-  else renderAbilSearch();
+  else if(mode==='abil') renderAbilSearch();
+  else if(mode==='item') renderItemSearch();
+  else renderFieldRef();
+}
+async function renderItemSearch(){
+  const out=$('dex-out'); if(!out) return;
+  const raw=$('dexitem-search').value.trim();
+  if(!raw){ out.innerHTML='<div class="hint">Cherche un objet pour voir son effet en français.</div>'; return; }
+  const en=toEN('items',raw), id=apiMoveId(en), req=++dexMoveReq;
+  out.innerHTML='<div class="hint">Chargement depuis PokéAPI…</div>';
+  let it;
+  try{ it=pokeCache.item[id]||(pokeCache.item[id]=await fetchJSON(POKE_API+'item/'+id)); }
+  catch(e){ if(req===dexMoveReq) out.innerHTML=`<div class="hint">Objet introuvable sur PokéAPI (« ${escHtml(raw)} ») — peut-être propre à Champions.</div>`; return; }
+  if(req!==dexMoveReq) return;
+  let txt='';
+  const fl=(it.flavor_text_entries||[]).filter(e=>e.language&&e.language.name==='fr').pop();
+  if(fl) txt=(fl.text||'').replace(/[\n\f\r]+/g,' ').trim();
+  if(!txt){ const ee=(it.effect_entries||[]).find(e=>e.language&&e.language.name==='en'); if(ee) txt=(ee.short_effect||ee.effect||'').replace(/[\n\f\r]+/g,' ').trim(); }
+  out.innerHTML=`<div class="dexname" style="font-size:20px;margin-bottom:8px">${escHtml(frName('items',en))}</div><div class="dexmove-card"><div class="mveff">${txt?escHtml(txt):'Description indisponible.'}</div></div>`;
+}
+function renderFieldRef(){
+  const out=$('dex-out'); if(!out) return;
+  const climats=[
+    ['Soleil','Attaques Feu ×1.5, Eau ×0.5. Lance-Soleil devient immédiat. Synthèse / Vœu Soin restaurent 2/3 des PV. Talents : Chlorophylle (Vitesse ×2), Force Soleil (Atq Spé ×1.5).'],
+    ['Pluie','Attaques Eau ×1.5, Feu ×0.5. Fatal-Foudre et Ouragan ne ratent jamais. Talents : Glissade (Vitesse ×2), Cuvette, Hydratation.'],
+    ['Tempête de Sable','Déf Spé des types Roche ×1.5. Inflige 1/16 des PV/tour, sauf aux types Roche, Sol et Acier. Talent : Sable Volant (Vitesse ×2).'],
+    ['Neige','Défense des types Glace ×1.5. Talent : Toboggan (Vitesse ×2). (Avant la Gen 9 : Grêle — 1/16 PV/tour sauf type Glace.)']
+  ];
+  const champs=[
+    ['Champ Électrifié','Attaques Électrik ×1.3 pour les Pokémon au sol. Empêche l\'endormissement.'],
+    ['Champ Herbu','Attaques Plante ×1.3 (au sol). Soigne 1/16 des PV/tour. Séisme, Tremblement de Terre et Mégasecousse voient leurs dégâts réduits de moitié.'],
+    ['Champ Brumeux','Attaques Dragon ×0.5 contre les Pokémon au sol. Protège des altérations de statut et de la confusion.'],
+    ['Champ Psychique','Attaques Psy ×1.3 (au sol). Bloque les attaques prioritaires visant les Pokémon au sol.']
+  ];
+  const block=(arr,title)=>`<div class="dexmoves-h">${title}</div><div class="mvlist">${arr.map(([n,d])=>`<div class="fieldcard"><div class="fieldname">${n}</div><div class="mveff">${d}</div></div>`).join('')}</div>`;
+  out.innerHTML = block(climats,'Climats') + '<div style="height:16px"></div>' + block(champs,'Champs');
 }
 async function renderAbilSearch(){
   const out=$('dex-out'); if(!out) return;
@@ -736,6 +774,7 @@ function setupDex(){
   const i=$('dex-search'); if(i) i.addEventListener('input', renderDex);
   const ms=$('dexmove-search'); if(ms) ms.addEventListener('input', renderMoveSearch);
   const as=$('dexabil-search'); if(as) as.addEventListener('input', renderAbilSearch);
+  const is=$('dexitem-search'); if(is) is.addEventListener('input', renderItemSearch);
   document.querySelectorAll('.dexmode-btn').forEach(b=>b.addEventListener('click', ()=>setDexMode(b.dataset.mode)));
   const o=$('dex-out'); if(o) o.addEventListener('click', e=>{ const h=e.target.closest('.mvhead'); if(h){ const row=h.closest('.mvrow'); if(row) toggleMove(row); } });
 }
@@ -892,10 +931,13 @@ function render(){
           <button type="button" class="dexmode-btn active" data-mode="mon">Pokémon</button>
           <button type="button" class="dexmode-btn" data-mode="move">Attaque</button>
           <button type="button" class="dexmode-btn" data-mode="abil">Talent</button>
+          <button type="button" class="dexmode-btn" data-mode="item">Objet</button>
+          <button type="button" class="dexmode-btn" data-mode="field">Terrain</button>
         </div>
         <div class="field" id="dex-mon-field"><span>Chercher un Pokémon</span><div class="pick"><input list="dl-species" id="dex-search" placeholder="ex. Tyranocif" autocomplete="off">${LBTN('dex-search','dl-species')}</div></div>
         <div class="field" id="dex-move-field" hidden><span>Chercher une attaque</span><div class="pick"><input list="dl-moves" id="dexmove-search" placeholder="ex. Lance-Flammes" autocomplete="off">${LBTN('dexmove-search','dl-moves')}</div></div>
         <div class="field" id="dex-abil-field" hidden><span>Chercher un talent</span><div class="pick"><input list="dl-abilities" id="dexabil-search" placeholder="ex. Intimidation" autocomplete="off">${LBTN('dexabil-search','dl-abilities')}</div></div>
+        <div class="field" id="dex-item-field" hidden><span>Chercher un objet</span><div class="pick"><input list="dl-items" id="dexitem-search" placeholder="ex. Orbe Vie" autocomplete="off">${LBTN('dexitem-search','dl-items')}</div></div>
         <div id="dex-out" class="dexcard"><div class="hint">Cherche un Pokémon pour voir ses stats de base.</div></div>
       </section>
       <section class="panel" data-panel="team" hidden>
