@@ -426,7 +426,8 @@ function normKey(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u03
 const REV={};
 for(const cat of ['species','moves','items','abilities']){REV[cat]={};const d=FR[cat]||{};for(const en in d){const k=normKey(en);if(!(k in REV[cat]))REV[cat][k]=en;}for(const en in d){REV[cat][normKey(d[en])]=en;}}
 function frName(cat,en){return (FR[cat]&&FR[cat][en])||en;}
-function toEN(cat,val){const r=REV[cat]&&REV[cat][normKey(val)];return r||val;}
+function baseItem(v){ if(!v) return v; let s=v; const i=s.indexOf(' — '); if(i>=0) s=s.slice(0,i); const j=s.indexOf(' ('); if(j>=0) s=s.slice(0,j); return s.trim(); }
+function toEN(cat,val){ if(cat==='items') val=baseItem(val); const r=REV[cat]&&REV[cat][normKey(val)];return r||val;}
 const FRWEATHER={Sun:'Soleil',Rain:'Pluie',Sand:'Sable',Snow:'Neige',Hail:'Grêle'};
 const FRTERRAIN={Electric:'Champ Électrifié',Grassy:'Champ Herbu',Misty:'Champ Brumeux',Psychic:'Champ Psychique'};
 
@@ -448,11 +449,17 @@ function inRosterItem(en){
   const it = gen && gen.items.get(dexId(en));
   return !!(it && it.megaStone);
 }
+function itemLabel(en){
+  const base=frName('items',en);
+  let it; try{ it=gen.items.get(dexId(en)); }catch(e){}
+  if(it && it.megaStone){ const m=it.megaStone; const vals=(typeof m==='string')?[m]:Object.values(m); const mega=vals[0]; if(mega) return `${base} — ${frName('species',mega)}`; }
+  return base;
+}
 function fillItems(){
   if(!gen) return;
   let names=collect(gen.items);
   if(rosterOn()) names=names.filter(inRosterItem);
-  fillDatalist($('dl-items'), frSort(names.map(x=>frName('items',x))));
+  fillDatalist($('dl-items'), frSort(names.map(itemLabel)));
 }
 function fillSpecies(){
   if(!gen) return;
@@ -463,7 +470,7 @@ function fillSpecies(){
   if(c) c.textContent = rosterOn()? `${names.length} Pokémon du roster` : `${names.length} Pokémon (toutes espèces)`;
 }
 function buildGen(n){
-  genNum = n; gen = calc.Generations.get(n);
+  genNum = n; gen = calc.Generations.get(n); _STONE_FOR=null;
   fillSpecies();
   fillDatalist($('dl-moves'), frSort(collect(gen.moves).map(x=>frName('moves',x))));
   fillItems();
@@ -750,9 +757,11 @@ function buildPokemon(side){
   // Méga-gemme : si l'objet est une méga-gemme correspondant à l'espèce, on méga-évolue
   if(itemEN){ try{ const it=gen.items.get(toID(itemEN)); const map=it&&it.megaStone;
     if(map){ const mega = typeof map==='string'? map : map[name];
-      if(mega){ const msp=gen.species.get(toID(mega)); if(msp){ name=msp.name; if(msp.abilities&&msp.abilities[0]) opts.ability=msp.abilities[0]; } }
+      if(mega){ const msp=gen.species.get(toID(mega)); if(msp){ name=msp.name; const mab=megaAbilityEN(msp.name); if(mab) opts.ability=mab; } }
     }
   }catch(e){} }
+  // Méga saisie directement sans talent renseigné → talent correct de Champions
+  if(isMegaName(name) && !opts.ability){ const mab=megaAbilityEN(name); if(mab) opts.ability=mab; }
   try{ return new calc.Pokemon(gen, name, opts); }catch(e){ return undefined; }
 }
 
@@ -810,11 +819,30 @@ function updateCounterUI(enMove){
   return c;
 }
 function isMegaName(n){ return /-(Mega|Primal)\b/.test(n||''); }
+// Talents corrects pour Champions là où le moteur diverge (données antérieures à une mise à jour)
+const MEGA_ABILITY_OVERRIDE = { 'Staraptor-Mega':'Contrary' };
+function megaAbilityEN(spName){
+  if(MEGA_ABILITY_OVERRIDE[spName]) return MEGA_ABILITY_OVERRIDE[spName];
+  let sp; try{ sp=gen.species.get(toID(spName)); }catch(e){}
+  return (sp&&sp.abilities&&sp.abilities[0])?sp.abilities[0]:null;
+}
+// Table inverse : nom de la méga → nom (EN) de sa méga-gemme
+let _STONE_FOR=null;
+function stoneEnForMega(megaName){
+  if(!_STONE_FOR){ _STONE_FOR={}; try{ for(const it of gen.items){ const m=it.megaStone; if(!m) continue; const vals=(typeof m==='string')?[m]:Object.values(m); for(const v of vals) _STONE_FOR[v]=it.name; } }catch(e){} }
+  return _STONE_FOR[megaName]||null;
+}
 function applyAutoAbility(side){
   const raw=$(`${side}-species`).value.trim(); if(!raw) return;
   const en=toEN('species',raw); let sp; try{ sp=gen.species.get(toID(en)); }catch(e){}
-  if(sp && isMegaName(sp.name) && sp.abilities && sp.abilities[0]){
-    $(`${side}-ability`).value = frName('abilities', sp.abilities[0]);
+  if(!sp) return;
+  if(isMegaName(sp.name)){
+    const ab=megaAbilityEN(sp.name); if(ab) $(`${side}-ability`).value = frName('abilities', ab);
+    const stone=stoneEnForMega(sp.name); if(stone) $(`${side}-item`).value = frName('items', stone);
+  } else {
+    // Pokémon non-méga : on retire une éventuelle méga-gemme laissée dans le champ
+    const cur=$(`${side}-item`).value.trim();
+    if(cur){ try{ const it=gen.items.get(toID(toEN('items',cur))); if(it && it.megaStone) $(`${side}-item`).value=''; }catch(e){} }
   }
 }
 function toID(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
