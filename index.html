@@ -158,6 +158,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
 .mvdesc.loading{opacity:.5}
 .mvfx{display:flex;flex-wrap:wrap;gap:6px}
 .fxchip{font-size:11px;font-weight:600;color:var(--text);background:var(--surface-3);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.fxchip.fxspecial{background:rgba(232,192,32,.13);border-color:var(--gold);color:var(--gold)}
 .mvmeta{display:flex;align-items:center;gap:8px;margin-left:auto;margin-right:8px}
 .mvtypechip{padding:2px 8px;font-size:9px}
 .mvbp{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:700;color:var(--text);min-width:26px;text-align:right}
@@ -685,6 +686,58 @@ function moveTagsFR(o){
   return t;
 }
 function moveDataByPoke(name){ return MOVEDATA[(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')]; }
+// Attaques à puissance variable / effet codé (aucune donnée structurée) → note dédiée
+const MOVE_SPECIAL={
+  ragefist:'Puissance +50 par coup reçu (max 350)',
+  lastrespects:'Puissance +50 par allié mis K.O. (max 300)',
+  gyroball:"D'autant plus puissante que le lanceur est lent (max 150)",
+  electroball:"D'autant plus puissante que le lanceur est rapide (max 150)",
+  heavyslam:'Plus puissante si le lanceur est lourd face à la cible (max 120)',
+  heatcrash:'Plus puissante si le lanceur est lourd face à la cible (max 120)',
+  lowkick:'Plus puissante si la cible est lourde (max 120)',
+  grassknot:'Plus puissante si la cible est lourde (max 120)',
+  reversal:"D'autant plus puissante que le lanceur a peu de PV (max 200)",
+  flail:"D'autant plus puissante que le lanceur a peu de PV (max 200)",
+  eruption:"D'autant plus puissante que le lanceur a de PV (max 150)",
+  waterspout:"D'autant plus puissante que le lanceur a de PV (max 150)",
+  dragonenergy:"D'autant plus puissante que le lanceur a de PV (max 150)",
+  hardpress:'Selon les PV restants de la cible (max 100)',
+  storedpower:'+20 de puissance par cran de stat positif du lanceur',
+  powertrip:'+20 de puissance par cran de stat positif du lanceur',
+  punishment:'Plus puissante si la cible a des boosts (max 200)',
+  return:'Plus puissante si le bonheur est élevé (max 102)',
+  frustration:'Plus puissante si le bonheur est bas (max 102)',
+  boltbeak:'Puissance doublée si le lanceur agit avant la cible',
+  fishiousrend:'Puissance doublée si le lanceur agit avant la cible',
+  facade:'Puissance doublée si le lanceur est brûlé, paralysé ou empoisonné',
+  hex:'Puissance doublée si la cible subit une altération de statut',
+  acrobatics:'Puissance doublée si le lanceur ne tient aucun objet',
+  payback:'Puissance doublée si le lanceur agit après la cible',
+  revenge:'Puissance doublée si le lanceur a été touché ce tour',
+  avalanche:'Puissance doublée si le lanceur a été touché ce tour',
+  assurance:'Puissance doublée si la cible a déjà subi des dégâts ce tour',
+  brine:'Puissance doublée si la cible est sous la moitié de ses PV',
+  venoshock:'Puissance doublée si la cible est empoisonnée',
+  knockoff:"Retire l'objet de la cible (+50% de puissance si elle en tient un)",
+  weatherball:'Type et puissance varient selon le climat',
+  terrainpulse:'Type et puissance varient selon le terrain',
+  terablast:'Type et catégorie (Phys/Spé) s\'adaptent au Téracristal',
+  furycutter:'Puissance qui double à chaque utilisation consécutive',
+  rollout:'Puissance qui double à chaque tour consécutif (5 tours), doublée après Roulé-Boulé',
+  iceball:'Puissance qui double à chaque tour consécutif (5 tours), doublée après Roulé-Boulé',
+  seismictoss:'Inflige des dégâts égaux au niveau du lanceur',
+  nightshade:'Inflige des dégâts égaux au niveau du lanceur',
+  dragonrage:'Inflige toujours 40 PV de dégâts',
+  sonicboom:'Inflige toujours 20 PV de dégâts',
+  superfang:'Réduit de moitié les PV actuels de la cible',
+  naturesmadness:'Réduit de moitié les PV actuels de la cible',
+  ruination:'Réduit de moitié les PV actuels de la cible',
+  endeavor:'Ramène les PV de la cible à ceux du lanceur',
+  finalgambit:'Inflige des dégâts égaux aux PV du lanceur (qui tombe K.O.)',
+  counter:'Renvoie le double des dégâts physiques subis',
+  mirrorcoat:'Renvoie le double des dégâts spéciaux subis',
+  metalburst:'Renvoie 1,5× les derniers dégâts subis'
+};
 const CAT_INFO={ P:{lab:'Physique',col:'#e0682f'}, S:{lab:'Spéciale',col:'#4d72d4'}, Z:{lab:'Statut',col:'#7c818b'} };
 function catBadge(c){
   const i=CAT_INFO[c]||CAT_INFO.Z;
@@ -695,11 +748,13 @@ function catBadge(c){
     : '<circle cx="8" cy="8" r="4.4" fill="none" stroke="#fff" stroke-width="2"/>';
   return `<span class="catbadge" style="background:${i.col}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">${glyph}</svg>${i.lab}</span>`;
 }
-function moveCardHtml(o){
+function moveCardHtml(o, id){
   const color=TYPECOLOR[o.t]||'#555';
   const tags=moveTagsFR(o);
+  const sp = id && MOVE_SPECIAL[id];
   return `<div class="mvtags"><span class="tchip" style="background:${color}">${frName('types',o.t)}</span>${catBadge(o.c)}</div>
     <div class="mvstats"><span>Puiss. <b>${o.bp||'—'}</b></span><span>Préc. <b>${o.a?o.a:'—'}</b></span><span>PP <b>${o.pp}</b></span></div>
+    ${sp?`<div class="mvfx"><span class="fxchip fxspecial">${escHtml(sp)}</span></div>`:''}
     ${tags.length?`<div class="mvfx">${tags.map(x=>`<span class="fxchip">${escHtml(x)}</span>`).join('')}</div>`:''}`;
 }
 function apiMoveId(en){ return (en||'').toLowerCase().replace(/['’.:]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
@@ -710,7 +765,7 @@ function renderMoveSearch(){
   if(!raw){ out.innerHTML='<div class="hint">Cherche une attaque pour voir puissance, précision, PP et effet.</div>'; return; }
   const en=toEN('moves',raw), o=MOVEDATA[dexId(en)];
   if(!o){ out.innerHTML=`<div class="hint">Attaque inconnue (« ${escHtml(raw)} »).</div>`; return; }
-  out.innerHTML=`<div class="dexname" style="font-size:20px;margin-bottom:8px">${escHtml(frName('moves',en))}</div><div class="dexmove-card">${moveCardHtml(o)}<div class="mveff mvdesc"></div></div>`;
+  out.innerHTML=`<div class="dexname" style="font-size:20px;margin-bottom:8px">${escHtml(frName('moves',en))}</div><div class="dexmove-card">${moveCardHtml(o, dexId(en))}<div class="mveff mvdesc"></div></div>`;
   loadMoveDesc(apiMoveId(en), out.querySelector('.mvdesc'));
 }
 async function loadMoveDesc(apiId, el){
@@ -791,7 +846,7 @@ function toggleMove(row){
   row.classList.add('open'); body.hidden=false;
   if(body.dataset.loaded) return;
   const o=moveDataByPoke(name);
-  body.innerHTML = o ? moveCardHtml(o)+'<div class="mveff mvdesc"></div>' : '<span class="hint">Détails indisponibles.</span>';
+  body.innerHTML = o ? moveCardHtml(o, (name||'').toLowerCase().replace(/[^a-z0-9]/g,''))+'<div class="mveff mvdesc"></div>' : '<span class="hint">Détails indisponibles.</span>';
   body.dataset.loaded='1';
   if(o) loadMoveDesc(name, body.querySelector('.mvdesc'));
 }
