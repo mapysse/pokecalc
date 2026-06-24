@@ -30,7 +30,9 @@ body{font-family:"Manrope",system-ui,sans-serif;color:var(--text);line-height:1.
 .mark{width:24px;height:24px;flex:none}
 .title{flex:1;margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
 .topbar select#gen{flex:none;background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:9px;padding:7px 9px;font-family:inherit;font-weight:600;font-size:13px;max-width:40vw}
-.topsub{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 9px}
+.topsub{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 9px;flex-wrap:nowrap}
+.rtoggle{white-space:nowrap}
+.rtoggle .rcount{margin-left:2px}
 .rtoggle{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
 .rtoggle input{width:auto;accent-color:var(--accent)}
 .rcount{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--dim)}
@@ -46,6 +48,8 @@ body{font-family:"Manrope",system-ui,sans-serif;color:var(--text);line-height:1.
 .tab[data-tab=dex].active{color:var(--lcd);border-color:var(--lcd)}
 
 .scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:2px 12px 16px}
+@keyframes panelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.panel:not([hidden]){animation:none}}
 .panel[hidden]{display:none}
 
 .mon{position:relative;border-radius:13px;padding:15px 14px 14px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
@@ -312,7 +316,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   input[type=checkbox]:focus{box-shadow:none;outline:none}
   .scroll{overflow-anchor:none}
   /* ===== Sets enregistrés + inverser ===== */
-  .topsub-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .topsub-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;flex:none;justify-content:flex-end}
+  .mini-btn{white-space:nowrap}
+  @media(max-width:374px){ .mini-btn .blab{display:none} }
   .mini-btn{background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:6px 11px;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer;min-height:34px;white-space:nowrap}
   .mini-btn:active{opacity:.6}
   .sets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
@@ -341,16 +347,32 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
   /* ===== Compactage mobile (densité réduite) ===== */
   @media(max-width:759px){
     body{line-height:1.38}
-    .topbar{padding:calc(env(safe-area-inset-top,0px) + 9px) 13px 5px;gap:9px}
+    /* ===== App shell : onglets en haut, sous l'en-tête ===== */
+    #app{display:flex;flex-direction:column;min-height:0}
+    .tabs{flex:none;display:flex;gap:4px;padding:0 10px 6px;background:none;border:none;box-shadow:none}
+    .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:40px;padding:5px 2px;border:none;border-radius:11px;background:var(--surface);color:var(--dim);font-size:9.5px;font-weight:700;letter-spacing:.005em;white-space:nowrap;transition:color .15s,background .15s}
+    .tab .tlab{line-height:1}
+    .tab svg{width:19px;height:19px;flex:none}
+    .tab.active{background:var(--surface-3)}
+    .tab[data-tab=atk].active{color:var(--atk)}
+    .tab[data-tab=def].active{color:var(--def)}
+    .tab[data-tab=field].active{color:var(--gold)}
+    .tab[data-tab=dex].active{color:var(--lcd)}
+    .tab[data-tab=team].active{color:var(--accent)}
+    .tab:active{transform:scale(.95)}
+    /* résultat : barre repliable en bas de l'écran */
+    .dock{flex:none;border-top:1px solid var(--line);background:var(--surface);padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 10px);box-shadow:0 -7px 20px rgba(0,0,0,.28)}
+    .dock #readout{max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    /* transition d'apparition des panneaux */
+    .panel:not([hidden]){animation:panelIn .19s ease both}
+    .topbar{padding:calc(env(safe-area-inset-top,0px) + 7px) 13px 4px;gap:9px}
     .mark{width:20px;height:20px}
     .title{font-size:16px}
     .topbar select#gen{padding:5px 7px;font-size:12px}
-    .topsub{padding:0 13px 6px;gap:8px}
+    .topsub{padding:0 13px 5px;gap:8px}
     .rtoggle{font-size:11.5px;gap:6px}
     .rcount{font-size:10px}
     .mini-btn{padding:5px 9px;font-size:11.5px;min-height:30px;border-radius:7px}
-    .tabs{padding:0 10px 6px;gap:5px}
-    .tab{padding:6px 3px;border-radius:8px}
     .scroll{padding:2px 10px 12px}
     .mon{padding:11px 11px 10px;border-radius:11px}
     .mon::before{height:2px}
@@ -448,11 +470,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22
     </select>
   </div>
   <div class="topsub">
-    <label class="rtoggle"><input type="checkbox" id="rosterOnly" checked> Roster Champions</label>
+    <label class="rtoggle"><input type="checkbox" id="rosterOnly" checked> Roster <span id="rosterCount" class="rcount"></span></label>
     <div class="topsub-right">
-      <button type="button" id="swapBtn" class="mini-btn" title="Inverser attaquant et défenseur">⇄ Inverser</button>
-      <button type="button" id="resetBtn" class="mini-btn" title="Vider toutes les entrées">↺ Reset</button>
-      <span id="rosterCount" class="rcount"></span>
+      <button type="button" id="swapBtn" class="mini-btn" title="Inverser attaquant et défenseur"><span class="bic">⇄</span><span class="blab"> Inverser</span></button>
+      <button type="button" id="resetBtn" class="mini-btn" title="Vider toutes les entrées"><span class="bic">↺</span><span class="blab"> Reset</span></button>
     </div>
   </div>
   <div id="app"><div class="loading"><div class="spinner"></div>Connexion à l'arène…</div></div>
@@ -531,7 +552,7 @@ function fillSpecies(){
   if(rosterOn()) names=names.filter(inRoster);
   fillDatalist($('dl-species'), frSort(names.map(n=>frName('species',n))));
   const c=$('rosterCount');
-  if(c) c.textContent = rosterOn()? `${names.length} Pokémon du roster` : `${names.length} Pokémon (toutes espèces)`;
+  if(c) c.textContent = rosterOn()? `(${names.length})` : `(toutes)`;
 }
 function buildGen(n){
   genNum = n; gen = calc.Generations.get(n); _STONE_FOR=null;
@@ -955,6 +976,13 @@ function restoreState(){
     $('tw-atk').checked=!!st.tw_atk; $('tw-def').checked=!!st.tw_def; $('trickroom').checked=!!st.trickroom;
   }catch(e){}
 }
+const TABICON={
+  atk:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>',
+  def:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/></svg>',
+  field:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"/></svg>',
+  dex:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h11a1 1 0 0 1 1 1V20H7a2.5 2.5 0 0 1-2.5-2.5V6A2.5 2.5 0 0 1 7 3.5"/><path d="M9.5 3.5V20" stroke-linecap="round"/></svg>',
+  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.6 19a5.4 5.4 0 0 1 10.8 0"/><path d="M16.2 6.6a3 3 0 0 1 0 5.6M16.8 19a5.4 5.4 0 0 0-1.9-4.1"/></svg>'
+};
 function render(){
   $('app').innerHTML = `
     <div class="desknav">
@@ -963,11 +991,11 @@ function render(){
       <button type="button" class="dnav" data-view="team">Équipes</button>
     </div>
     <div class="tabs" role="tablist">
-      <button type="button" class="tab active" data-tab="atk"><span class="pip"></span>Attaquant</button>
-      <button type="button" class="tab" data-tab="def"><span class="pip"></span>Défenseur</button>
-      <button type="button" class="tab" data-tab="field"><span class="pip"></span>Terrain</button>
-      <button type="button" class="tab" data-tab="dex"><span class="pip"></span>Pokédex</button>
-      <button type="button" class="tab" data-tab="team"><span class="pip"></span>Équipes</button>
+      <button type="button" class="tab active" data-tab="atk">${TABICON.atk}<span class="tlab">Attaquant</span></button>
+      <button type="button" class="tab" data-tab="def">${TABICON.def}<span class="tlab">Défenseur</span></button>
+      <button type="button" class="tab" data-tab="field">${TABICON.field}<span class="tlab">Terrain</span></button>
+      <button type="button" class="tab" data-tab="dex">${TABICON.dex}<span class="tlab">Pokédex</span></button>
+      <button type="button" class="tab" data-tab="team">${TABICON.team}<span class="tlab">Équipes</span></button>
     </div>
     <div class="scroll">
       <section class="panel" data-panel="atk">
